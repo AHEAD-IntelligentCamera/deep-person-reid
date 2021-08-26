@@ -5,7 +5,7 @@ from collections import deque
 import torch
 from PIL import Image
 from torchvision.transforms import (
-    Resize, Compose, ToTensor, Normalize, ColorJitter, RandomHorizontalFlip
+    Resize, Compose, ToTensor, Normalize, ColorJitter, RandomHorizontalFlip, Pad
 )
 
 
@@ -299,6 +299,10 @@ def build_transforms(
         transform_tr += [
             ColorJitter(brightness=0.2, contrast=0.15, saturation=0, hue=0)
         ]
+
+    if 'pad' in transforms:
+        print('+ pad')
+        transform_tr += [Pad(10)]
 
     print('+ to torch tensor of range [0, 1]')
     transform_tr += [ToTensor()]
