@@ -1,0 +1,3 @@
+[submodule "projects/Research"]
+	path = projects/Research
+	url = https://github.com/ShechemKS/person-reid.git
