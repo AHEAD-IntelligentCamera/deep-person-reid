@@ -4,6 +4,7 @@ Code source: https://github.com/pytorch/vision
 from __future__ import division, absolute_import
 import torch.utils.model_zoo as model_zoo
 from torch import nn
+import torch
 
 __all__ = [
     'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
@@ -156,7 +157,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
     """Residual network.
-    
+
     Reference:
         - He et al. Deep Residual Learning for Image Recognition. CVPR 2016.
         - Xie et al. Aggregated Residual Transformations for Deep Neural Networks. CVPR 2017.
@@ -373,17 +374,32 @@ class ResNet(nn.Module):
 
 def init_pretrained_weights(model, model_url):
     """Initializes model with pretrained weights.
-    
+
     Layers that don't match with pretrained layers in name or size are kept unchanged.
     """
     pretrain_dict = model_zoo.load_url(model_url)
     model_dict = model.state_dict()
-    pretrain_dict = {
-        k: v
-        for k, v in pretrain_dict.items()
-        if k in model_dict and model_dict[k].size() == v.size()
-    }
-    model_dict.update(pretrain_dict)
+    new_dict = {}
+    for k, v in pretrain_dict.items():
+        if k in model_dict and model_dict[k].size() == v.size():
+            new_dict[k] = v
+        elif k in model_dict and not any(
+                torch.tensor(model_dict[k].shape)
+                % torch.tensor(v.shape)):
+            print(k)
+            orig_shape = torch.tensor(v.shape)
+            new_shape = torch.tensor(model_dict[k].shape)
+            extend = (new_shape / orig_shape).int().tolist()
+            print(f'extending from {orig_shape} to {new_shape} using {extend}')
+            v_new = v.repeat(extend)
+            new_dict[k] = v_new
+
+    # pretrain_dict = {
+    #     k: v
+    #     for k, v in pretrain_dict.items()
+    #     if k in model_dict and model_dict[k].size() == v.size()
+    # }
+    model_dict.update(new_dict)
     model.load_state_dict(model_dict)
 
 
@@ -422,13 +438,13 @@ def resnet34(num_classes, loss='softmax', pretrained=True, **kwargs):
     return model
 
 
-def resnet50(num_classes, loss='softmax', pretrained=True, **kwargs):
+def resnet50(num_classes, loss='softmax', pretrained=True, last_stride=2, **kwargs):
     model = ResNet(
         num_classes=num_classes,
         loss=loss,
         block=Bottleneck,
         layers=[3, 4, 6, 3],
-        last_stride=2,
+        last_stride=last_stride,
         fc_dims=None,
         dropout_p=None,
         **kwargs
