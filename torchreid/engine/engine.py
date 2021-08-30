@@ -127,7 +127,8 @@ class Engine(object):
         visrank_topk=10,
         use_metric_cuhk03=False,
         ranks=[1, 5, 10, 20],
-        rerank=False
+        rerank=False,
+        input_size=(1, 3, 256, 128),
     ):
         r"""A unified pipeline for training and evaluating a model.
 
@@ -180,6 +181,8 @@ class Engine(object):
 
         if self.writer is None:
             self.writer = SummaryWriter(log_dir=save_dir)
+            dummy_input = torch.rand(input_size)
+            self.writer.add_graph(model=self.model, input_to_model=dummy_input)
 
         time_start = time.time()
         self.start_epoch = start_epoch
