@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 import pickle
 import shutil
 import os.path as osp
+import glob
 import warnings
 from functools import partial
 from collections import OrderedDict
@@ -12,6 +13,7 @@ from .tools import mkdir_if_missing
 
 __all__ = [
     'save_checkpoint', 'load_checkpoint', 'resume_from_checkpoint',
+    'fetch_checkpoint',
     'open_all_layers', 'open_specified_layers', 'count_num_param',
     'load_pretrained_weights'
 ]
@@ -132,6 +134,15 @@ def resume_from_checkpoint(fpath, model, optimizer=None, scheduler=None):
     if 'rank1' in checkpoint.keys():
         print('Last rank1 = {:.1%}'.format(checkpoint['rank1']))
     return start_epoch
+
+
+def fetch_checkpoint(save_dir, best=False):
+    if best:
+        return osp.join(save_dir, 'model.pth.tar-best')
+    checkpoints = sorted(glob.glob(save_dir + '/model.pth.tar-*', True))
+    if not len(checkpoints):
+        return None
+    return checkpoints[-1]
 
 
 def adjust_learning_rate(
