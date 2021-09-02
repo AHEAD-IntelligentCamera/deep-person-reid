@@ -239,7 +239,7 @@ class ResNet(nn.Module):
         )
         self.global_avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = self._construct_fc_layer(
-            fc_dims, 512 * block.expansion, dropout_p
+            fc_dims, self.feature_dim, dropout_p
         )
         self.classifier = nn.Linear(self.feature_dim, num_classes)
 

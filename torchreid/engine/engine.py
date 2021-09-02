@@ -181,8 +181,8 @@ class Engine(object):
 
         if self.writer is None:
             self.writer = SummaryWriter(log_dir=save_dir)
-            dummy_input = torch.rand(input_size)
-            self.writer.add_graph(model=self.model, input_to_model=dummy_input)
+            # dummy_input = torch.rand(input_size)
+            # self.writer.add_graph(model=self.model, input_to_model=dummy_input)
 
         time_start = time.time()
         self.start_epoch = start_epoch
