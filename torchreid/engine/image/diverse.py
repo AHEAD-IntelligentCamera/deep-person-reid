@@ -1,13 +1,13 @@
 from __future__ import division, print_function, absolute_import
 import torch
 from torchreid import metrics
-from torchreid.losses import TripletLoss, CrossEntropyLoss
+from torchreid.losses import TripletLoss, CrossEntropyLoss, DiversityLoss
 
 from ..engine import Engine
 
 
-class ImageTripletEngine(Engine):
-    r"""Triplet-loss engine for image-reid.
+class ImageDiversityEngine(Engine):
+    r"""Diversity-loss engine for image-reid.
 
     Args:
         datamanager (DataManager): an instance of ``torchreid.data.ImageDataManager``
@@ -37,7 +37,7 @@ class ImageTripletEngine(Engine):
         model = torchreid.models.build_model(
             name='resnet50',
             num_classes=datamanager.num_train_pids,
-            loss='triplet'
+            loss='diverse'
         )
         model = model.cuda()
         optimizer = torchreid.optim.build_optimizer(
@@ -64,24 +64,27 @@ class ImageTripletEngine(Engine):
         datamanager,
         model,
         optimizer,
+        templates = 8,
         margin=0.3,
         weight_t=1,
         weight_x=1,
+        weight_d=1,
         scheduler=None,
         use_gpu=True,
         label_smooth=True
     ):
-        super(ImageTripletEngine, self).__init__(datamanager, use_gpu)
+        super(ImageDiversityEngine, self).__init__(datamanager, use_gpu)
 
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.register_model('model', model, optimizer, scheduler)
 
-        assert weight_t >= 0 and weight_x >= 0
-        assert weight_t + weight_x > 0
+        assert weight_t >= 0 and weight_x >= 0 and weight_d >= 0
+        assert weight_t + weight_x + weight_d > 0
         self.weight_t = weight_t
         self.weight_x = weight_x
+        self.weight_d = weight_d
 
         self.criterion_t = TripletLoss(margin=margin)
         self.criterion_x = CrossEntropyLoss(
@@ -89,6 +92,7 @@ class ImageTripletEngine(Engine):
             use_gpu=self.use_gpu,
             label_smooth=label_smooth
         )
+        self.criterion_d = DiversityLoss(n_templates = templates)
 
     def forward_backward(self, data):
         imgs, pids = self.parse_data_for_train(data)
@@ -98,6 +102,7 @@ class ImageTripletEngine(Engine):
             pids = pids.cuda()
         
         outputs, features = self.model(imgs)
+       
         loss = 0
         loss_summary = {}
 
@@ -106,6 +111,11 @@ class ImageTripletEngine(Engine):
             loss += self.weight_t * loss_t
             loss_summary['loss_t'] = loss_t.item()
 
+        if self.weight_d > 0 and isinstance(features, (tuple, list)):
+            loss_d = self.compute_loss(self.criterion_d, features[1:], pids)
+            loss += self.weight_d * loss_d
+            loss_summary['loss_d'] = loss_d.item()
+            
         if self.weight_x > 0:
             loss_x = self.compute_loss(self.criterion_x, outputs, pids)
             loss += self.weight_x * loss_x
@@ -119,7 +129,7 @@ class ImageTripletEngine(Engine):
                     else:
                         loss_summary['acc_local'] += metrics.accuracy(part_output, pids)[0].item()
                 loss_summary['acc_local'] /= len(outputs[1:])
-                
+
         assert loss_summary
 
         self.optimizer.zero_grad()

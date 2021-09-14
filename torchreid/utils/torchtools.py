@@ -139,7 +139,7 @@ def resume_from_checkpoint(fpath, model, optimizer=None, scheduler=None):
 def fetch_checkpoint(save_dir, best=False):
     if best:
         return osp.join(save_dir, 'model.pth.tar-best')
-    checkpoints = sorted(glob.glob(save_dir + '/model.pth.tar-*', True))
+    checkpoints = sorted(glob.glob(save_dir + '/model.pth.tar-*', recursive=True))
     if not len(checkpoints):
         return None
     return checkpoints[-1]
