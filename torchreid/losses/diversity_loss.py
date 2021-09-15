@@ -21,13 +21,14 @@ class DiversityLoss(nn.Module):
 
         if isinstance(inputs, (tuple, list)):
             assert len(inputs) == self.K, f'inputs {len(inputs)} != templates {self.K}'
-            inputs = torch.stack(inputs).transpose(0, 1)                                     # stacks the part-based embeddings [bs, n_temp, d]
-            dots = inputs @ inputs.transpose(2, 1)                                           # taking dot product between each of the vectors [bs, n_temp, n_temp]
-            norms = torch.sqrt(torch.diagonal(dots, 0, dim1=-2, dim2=-1)).unsqueeze(2)      # taking the L2 norm values (the main diagonal and square root of it) [bs, 1, n_temp]
-            norms = torch.matmul(norms, norms.transpose(2, 1))                               # matrix multiplication to obatin the L2 norm multipliers to divide by [bs, n_temp, n_temp]
+            inputs = torch.stack(inputs).transpose(0, 1)                                    # stacks the part-based embeddings [bs, n_temp, d]
+            dots = inputs @ inputs.transpose(2, 1)                                          # taking dot product between each of the vectors [bs, n_temp, n_temp]
+            norms = torch.diagonal(dots, 0, dim1=-2, dim2=-1).unsqueeze(2)                  # taking the sqaure of the L2 norm values (the main diagonal) [bs, 1, n_temp]
+            dots = torch.square(dots)                                                       # Taking the square of the norms
+            norms = torch.matmul(norms, norms.transpose(2, 1))                              # matrix multiplication to obatin the L2 norm multipliers to divide by [bs, n_temp, n_temp]
             dots = dots / norms                                                             # divide each dot product element by the corresponding norm multipliers
             dots = torch.triu(dots, 1) + torch.tril(dots, -1)                               # removing the main diagonal (i!=j)
-            dots = torch.sum(dots, dim=(1, 2))*self.loss_scale                               # diverse loss for a single sample
+            dots = torch.sum(dots, dim=(1, 2))*self.loss_scale                              # diverse loss for a single sample
 
             return torch.mean(dots)         # returning the loss value as the mean value over the batch size
         else:

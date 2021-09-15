@@ -1,5 +1,4 @@
 from __future__ import division, print_function, absolute_import
-import torch
 from torchreid import metrics
 from torchreid.losses import TripletLoss, CrossEntropyLoss, DiversityLoss
 
@@ -22,7 +21,7 @@ class ImageDiversityEngine(Engine):
         label_smooth (bool, optional): use label smoothing regularizer. Default is True.
 
     Examples::
-        
+
         import torchreid
         datamanager = torchreid.data.ImageDataManager(
             root='path/to/reid-data',
@@ -64,7 +63,7 @@ class ImageDiversityEngine(Engine):
         datamanager,
         model,
         optimizer,
-        templates = 8,
+        templates=8,
         margin=0.3,
         weight_t=1,
         weight_x=1,
@@ -92,17 +91,17 @@ class ImageDiversityEngine(Engine):
             use_gpu=self.use_gpu,
             label_smooth=label_smooth
         )
-        self.criterion_d = DiversityLoss(n_templates = templates)
+        self.criterion_d = DiversityLoss(n_templates=templates)
 
     def forward_backward(self, data):
         imgs, pids = self.parse_data_for_train(data)
-        
+
         if self.use_gpu:
             imgs = imgs.cuda()
             pids = pids.cuda()
-        
+
         outputs, features = self.model(imgs)
-       
+
         loss = 0
         loss_summary = {}
 
@@ -115,13 +114,13 @@ class ImageDiversityEngine(Engine):
             loss_d = self.compute_loss(self.criterion_d, features[1:], pids)
             loss += self.weight_d * loss_d
             loss_summary['loss_d'] = loss_d.item()
-            
+
         if self.weight_x > 0:
             loss_x = self.compute_loss(self.criterion_x, outputs, pids)
             loss += self.weight_x * loss_x
             loss_summary['loss_x'] = loss_x.item()
             loss_summary['acc_global'] = metrics.accuracy(outputs, pids)[0].item()
-            
+
             if isinstance(outputs, (tuple, list)):
                 for part_output in outputs[1:]:
                     if 'acc_local' not in loss_summary.keys():
