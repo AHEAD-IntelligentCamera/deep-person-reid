@@ -84,6 +84,7 @@ class ImageDiversityEngine(Engine):
         self.weight_t = weight_t
         self.weight_x = weight_x
         self.weight_d = weight_d
+        self.templates = templates
 
         self.criterion_t = TripletLoss(margin=margin)
         self.criterion_x = CrossEntropyLoss(
@@ -122,13 +123,14 @@ class ImageDiversityEngine(Engine):
             loss_summary['acc_global'] = metrics.accuracy(outputs, pids)[0].item()
 
             if isinstance(outputs, (tuple, list)):
-                for part_output in outputs[1:]:
-                    if 'acc_local' not in loss_summary.keys():
-                        loss_summary['acc_local'] = metrics.accuracy(part_output, pids)[0].item()
+                for part_output in outputs[1:self.templates + 1]:
+                    if 'acc_part' not in loss_summary.keys():
+                        loss_summary['acc_part'] = metrics.accuracy(part_output, pids)[0].item()
                     else:
-                        loss_summary['acc_local'] += metrics.accuracy(part_output, pids)[0].item()
-                loss_summary['acc_local'] /= len(outputs[1:])
-
+                        loss_summary['acc_part'] += metrics.accuracy(part_output, pids)[0].item()
+                loss_summary['acc_part'] /= len(outputs[1:])
+                if len(outputs) > self.templates + 1:
+                    loss_summary['acc_graph'] = metrics.accuracy(outputs[-1], pids)[0].item()
         assert loss_summary
 
         self.optimizer.zero_grad()

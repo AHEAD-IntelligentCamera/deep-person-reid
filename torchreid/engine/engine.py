@@ -258,17 +258,17 @@ class Engine(object):
                 eta_str = str(datetime.timedelta(seconds=int(eta_seconds)))
                 print(
                     'epoch: [{0}/{1}][{2}/{3}]\t'
-                    'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                    'data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                    # 'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                    # 'data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                     'eta {eta}\t'
                     '{losses}\t'
-                    'lr {lr:.6f}'.format(
+                    'lr {lr:.4f}'.format(
                         self.epoch + 1,
                         self.max_epoch,
                         self.batch_idx + 1,
                         self.num_batches,
-                        batch_time=batch_time,
-                        data_time=data_time,
+                        # batch_time=batch_time,
+                        # data_time=data_time,
                         eta=eta_str,
                         losses=losses,
                         lr=self.get_current_lr()

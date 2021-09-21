@@ -1,5 +1,4 @@
 from __future__ import division, print_function, absolute_import
-import torch
 from torchreid import metrics
 from torchreid.losses import TripletLoss, CrossEntropyLoss
 
@@ -110,15 +109,14 @@ class ImageTripletEngine(Engine):
             loss_x = self.compute_loss(self.criterion_x, outputs, pids)
             loss += self.weight_x * loss_x
             loss_summary['loss_x'] = loss_x.item()
-            loss_summary['acc_global'] = metrics.accuracy(outputs, pids)[0].item()
-            
+            loss_summary['acc_global'] = metrics.accuracy(outputs[0], pids)[0].item()
             if isinstance(outputs, (tuple, list)):
                 for part_output in outputs[1:]:
-                    if 'acc_local' not in loss_summary.keys():
-                        loss_summary['acc_local'] = metrics.accuracy(part_output, pids)[0].item()
+                    if 'acc_part' not in loss_summary.keys():
+                        loss_summary['acc_part'] = metrics.accuracy(part_output, pids)[0].item()
                     else:
-                        loss_summary['acc_local'] += metrics.accuracy(part_output, pids)[0].item()
-                loss_summary['acc_local'] /= len(outputs[1:])
+                        loss_summary['acc_part'] += metrics.accuracy(part_output, pids)[0].item()
+                loss_summary['acc_part'] /= len(outputs[1:])
                 
         assert loss_summary
 

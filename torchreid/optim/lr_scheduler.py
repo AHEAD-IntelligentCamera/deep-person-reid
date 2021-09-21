@@ -1,11 +1,58 @@
 from __future__ import print_function, absolute_import
+from bisect import bisect_right
 import torch
 
-AVAI_SCH = ['single_step', 'multi_step', 'cosine']
+AVAI_SCH = ['single_step', 'multi_step', 'cosine', 'warmup_multi_step']
+
+
+class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
+    def __init__(
+        self,
+        optimizer,
+        milestones,
+        gamma=0.1,
+        warmup_factor=1.0 / 3,
+        warmup_iters=500,
+        warmup_method="linear",
+        last_epoch=-1,
+    ):
+        if not list(milestones) == sorted(milestones):
+            raise ValueError(
+                "Milestones should be a list of" " increasing integers. Got {}",
+                milestones,
+            )
+
+        if warmup_method not in ("constant", "linear"):
+            raise ValueError(
+                "Only 'constant' or 'linear' warmup_method accepted"
+                "got {}".format(warmup_method)
+            )
+        self.milestones = milestones
+        self.gamma = gamma
+        self.warmup_factor = warmup_factor
+        self.warmup_iters = warmup_iters
+        self.warmup_method = warmup_method
+        super(WarmupMultiStepLR, self).__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        warmup_factor = 1
+        if self.last_epoch < self.warmup_iters:
+            if self.warmup_method == "constant":
+                warmup_factor = self.warmup_factor
+            elif self.warmup_method == "linear":
+                alpha = self.last_epoch / self.warmup_iters
+                warmup_factor = self.warmup_factor * (1 - alpha) + alpha
+        return [
+            base_lr *
+            warmup_factor *
+            self.gamma ** bisect_right(self.milestones, self.last_epoch)
+            for base_lr in self.base_lrs
+        ]
 
 
 def build_lr_scheduler(
-    optimizer, lr_scheduler='single_step', stepsize=1, gamma=0.1, max_epoch=1
+    optimizer, lr_scheduler='single_step', stepsize=1, gamma=0.1, max_epoch=1,
+    wu_factor=1.0 / 3, wu_epochs=1, wu_method='linear',
 ):
     """A function wrapper for building a learning rate scheduler.
 
@@ -17,7 +64,10 @@ def build_lr_scheduler(
             "multi_step", ``stepsize`` is a list. Default is 1.
         gamma (float, optional): decay rate. Default is 0.1.
         max_epoch (int, optional): maximum epoch (for cosine annealing). Default is 1.
-
+        wu_factor (float, optional): warmup factor (for warmup_multi_step). Default is 1.0 / 3
+        wu_epochs (int, optional): number of warmup epochs (for warmup_multi_step). Default is 1
+        wu_method (str, optional): warmup method (for warmup_multi_step).
+            One of ``['linear', 'constant']``. Default is ``'linear'``
     Examples::
         >>> # Decay learning rate by every 20 epochs.
         >>> scheduler = torchreid.optim.build_lr_scheduler(
@@ -63,6 +113,13 @@ def build_lr_scheduler(
     elif lr_scheduler == 'cosine':
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, float(max_epoch)
+        )
+    
+    elif lr_scheduler == 'warmup_multi_step':
+        scheduler = WarmupMultiStepLR(
+            optimizer, milestones=stepsize, gamma=gamma,
+            warmup_factor=wu_factor, warmup_iters=wu_epochs,
+            warmup_method=wu_method
         )
 
     return scheduler

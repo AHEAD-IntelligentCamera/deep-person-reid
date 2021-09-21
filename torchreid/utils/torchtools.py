@@ -215,7 +215,20 @@ def open_specified_layers(model, open_layers):
     if isinstance(open_layers, str):
         open_layers = [open_layers]
 
+    open_modules = []
+    open_names = []
     for layer in open_layers:
+        # assert hasattr(
+        #     model, layer
+        # ), '"{}" is not an attribute of the model, please provide the correct name'.format(
+        #     layer
+        # )
+        if isinstance(layer, nn.Module):
+            open_modules.append(layer)
+        elif isinstance(layer, str):
+            open_names.append(layer)
+
+    for layer in open_names:
         assert hasattr(
             model, layer
         ), '"{}" is not an attribute of the model, please provide the correct name'.format(
@@ -223,7 +236,7 @@ def open_specified_layers(model, open_layers):
         )
 
     for name, module in model.named_children():
-        if name in open_layers:
+        if name in open_names or isinstance(module, open_modules):
             module.train()
             for p in module.parameters():
                 p.requires_grad = True
