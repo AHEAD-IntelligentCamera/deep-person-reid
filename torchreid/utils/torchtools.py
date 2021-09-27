@@ -227,7 +227,9 @@ def open_specified_layers(model, open_layers):
             open_modules.append(layer)
         elif isinstance(layer, str):
             open_names.append(layer)
-
+    print("OPEN NAMES", open_names)
+    print("OPEN MODULES", open_modules)
+    
     for layer in open_names:
         assert hasattr(
             model, layer
@@ -236,11 +238,13 @@ def open_specified_layers(model, open_layers):
         )
 
     for name, module in model.named_children():
-        if name in open_names or isinstance(module, open_modules):
+        if name in open_names or isinstance(module, tuple(open_modules)):
+            # print("TRAINING DURING EXECUTION", name, type(module))
             module.train()
             for p in module.parameters():
                 p.requires_grad = True
         else:
+            # print("NOT TRAINING DURING EXECUTION", name, type(module))
             module.eval()
             for p in module.parameters():
                 p.requires_grad = False

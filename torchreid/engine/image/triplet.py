@@ -109,15 +109,16 @@ class ImageTripletEngine(Engine):
             loss_x = self.compute_loss(self.criterion_x, outputs, pids)
             loss += self.weight_x * loss_x
             loss_summary['loss_x'] = loss_x.item()
-            loss_summary['acc_global'] = metrics.accuracy(outputs[0], pids)[0].item()
             if isinstance(outputs, (tuple, list)):
+                loss_summary['acc_global'] = metrics.accuracy(outputs[0], pids)[0].item()
                 for part_output in outputs[1:]:
                     if 'acc_part' not in loss_summary.keys():
                         loss_summary['acc_part'] = metrics.accuracy(part_output, pids)[0].item()
                     else:
                         loss_summary['acc_part'] += metrics.accuracy(part_output, pids)[0].item()
                 loss_summary['acc_part'] /= len(outputs[1:])
-                
+            else:
+                loss_summary['acc'] = metrics.accuracy(outputs, pids)[0].item()
         assert loss_summary
 
         self.optimizer.zero_grad()
