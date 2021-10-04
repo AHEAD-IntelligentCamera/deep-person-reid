@@ -209,14 +209,20 @@ def open_specified_layers(model, open_layers):
         >>> open_layers = ['fc', 'classifier']
         >>> open_specified_layers(model, open_layers)
     """
+    open_start = None
     if isinstance(model, nn.DataParallel):
         model = model.module
 
     if isinstance(open_layers, str):
         open_layers = [open_layers]
+    
+    if len(open_layers) == 2 and open_layers[0] == 'from':
+        open_start = open_layers[1]
+        open_layers = []
 
     open_modules = []
     open_names = []
+
     for layer in open_layers:
         # assert hasattr(
         #     model, layer
@@ -237,17 +243,33 @@ def open_specified_layers(model, open_layers):
             layer
         )
 
-    for name, module in model.named_children():
-        if name in open_names or isinstance(module, tuple(open_modules)):
-            # print("TRAINING DURING EXECUTION", name, type(module))
-            module.train()
-            for p in module.parameters():
-                p.requires_grad = True
-        else:
-            # print("NOT TRAINING DURING EXECUTION", name, type(module))
-            module.eval()
-            for p in module.parameters():
-                p.requires_grad = False
+    if open_start is None:
+        for name, module in model.named_children():
+            if name in open_names or isinstance(module, tuple(open_modules)):
+                # print("TRAINING DURING EXECUTION", name, type(module))
+                module.train()
+                for p in module.parameters():
+                    p.requires_grad = True
+            else:
+                # print("NOT TRAINING DURING EXECUTION", name, type(module))
+                module.eval()
+                for p in module.parameters():
+                    p.requires_grad = False
+    
+    if open_start is not None:
+        start_flag = False
+        for name, module in model.named_modules():
+            if name == open_start or start_flag:
+                start_flag = True
+                # print("TRAINING DURING EXECUTION", name, type(module))
+                # module.train()
+                for p in module.parameters():
+                    p.requires_grad = True
+            else:
+                # print("NOT TRAINING DURING EXECUTION", name, type(module))
+                # module.eval()
+                for p in module.parameters():
+                    p.requires_grad = False
 
 
 def count_num_param(model):

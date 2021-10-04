@@ -112,7 +112,9 @@ class ImageDiversityEngine(Engine):
             loss_summary['loss_t'] = loss_t.item()
 
         if self.weight_d > 0 and isinstance(features, (tuple, list)):
-            loss_d = self.compute_loss(self.criterion_d, features[1:], pids)
+            loss_d = self.compute_loss(self.criterion_d,
+                                       features[1:self.templates + 1],
+                                       pids)
             loss += self.weight_d * loss_d
             loss_summary['loss_d'] = loss_d.item()
 
