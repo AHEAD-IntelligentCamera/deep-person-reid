@@ -5,3 +5,4 @@ from .datasets import (
     register_video_dataset
 )
 from .datamanager import ImageDataManager, VideoDataManager
+from .transforms import BatchConstantErasing

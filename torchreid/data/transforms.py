@@ -48,6 +48,41 @@ class Random2DTranslation(object):
         return croped_img
 
 
+class BatchConstantErasing(object):
+    """Randomly erases an image strip from entire batch.
+
+    This is a hack - transforms the image after batching
+    """
+
+    def __init__(
+        self,
+        probability=1,
+        sl=0.1,
+        sh=0.4,
+        mean=[0.4914, 0.4822, 0.4465]
+    ):
+        self.probability = probability
+        self.mean = mean
+        self.sl = sl
+        self.sh = sh
+
+    def __call__(self, batch):
+        if random.uniform(0, 1) > self.probability:
+            return batch
+
+        # Erase a strip
+        h = random.uniform(self.sl, self.sh) * batch.size()[2]
+        
+        x1 = random.randint(0, batch.size()[2] - h)
+        if batch.size()[1] == 3:
+            batch[:, 0, x1:x1 + h, :] = self.mean[0]
+            batch[:, 1, x1:x1 + h, :] = self.mean[1]
+            batch[:, 2, x1:x1 + h, :] = self.mean[2]
+        else:
+            batch[:, 0, x1:x1 + h, :] = self.mean[0]
+        return batch
+
+
 class RandomErasing(object):
     """Randomly erases an image patch.
 
@@ -162,8 +197,8 @@ class RandomPatch(object):
         prob_happen=0.5,
         pool_capacity=50000,
         min_sample_size=100,
-        patch_min_area=0.01,
-        patch_max_area=0.5,
+        patch_min_area=0.1,
+        patch_max_area=0.6,
         patch_min_ratio=0.1,
         prob_rotate=0.5,
         prob_flip_leftright=0.5,

@@ -244,6 +244,8 @@ class Engine(object):
         self.num_batches = len(self.train_loader)
         end = time.time()
         for self.batch_idx, data in enumerate(self.train_loader):
+            if self.datamanager.batch_erase is not None:
+                data['img'] = self.datamanager.batch_erase(data['img'])
             data_time.update(time.time() - end)
             loss_summary = self.forward_backward(data)
             batch_time.update(time.time() - end)

@@ -3,7 +3,7 @@ import torch
 
 from torchreid.data.sampler import build_train_sampler
 from torchreid.data.datasets import init_image_dataset, init_video_dataset
-from torchreid.data.transforms import build_transforms
+from torchreid.data.transforms import build_transforms, BatchConstantErasing
 
 
 class DataManager(object):
@@ -57,6 +57,9 @@ class DataManager(object):
             norm_mean=norm_mean,
             norm_std=norm_std
         )
+        self.batch_erase = None
+        if 'batch_erase' in transforms:
+            self.batch_erase = BatchConstantErasing()
 
         self.use_gpu = (torch.cuda.is_available() and use_gpu)
 
