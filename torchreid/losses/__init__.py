@@ -4,6 +4,8 @@ from .cross_entropy_loss import CrossEntropyLoss
 from .hard_mine_triplet_loss import TripletLoss
 from .diversity_loss import DiversityLoss
 from .hard_mine_bed_loss import BEDLoss
+from .k_hard_triplet_loss import KHardNegativeTriplet
+from .contrastive_loss import Contrastive
 
 def DeepSupervision(criterion, xs, y):
     """DeepSupervision

@@ -261,6 +261,7 @@ def open_specified_layers(model, open_layers):
         for name, module in model.named_modules():
             if name == open_start or start_flag:
                 start_flag = True
+                open_layers.append(name)
                 # print("TRAINING DURING EXECUTION", name, type(module))
                 # module.train()
                 for p in module.parameters():
@@ -270,6 +271,7 @@ def open_specified_layers(model, open_layers):
                 # module.eval()
                 for p in module.parameters():
                     p.requires_grad = False
+    print("OPEN LAYERS", open_layers)
 
 
 def count_num_param(model):
