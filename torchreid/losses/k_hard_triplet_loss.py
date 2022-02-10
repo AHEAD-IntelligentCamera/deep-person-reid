@@ -42,7 +42,7 @@ class KHardNegativeTriplet(nn.Module):
         for i in range(n):
             dist_ap.append(dist[i][mask[i]].max().unsqueeze(0))
             sorted, indices = torch.sort(dist[i][mask[i] == 0])
-            neg=torch.sum(sorted[0:3])
+            neg = torch.sum(sorted[0:3])
             dist_an.append(neg.unsqueeze(0))
         dist_ap = torch.cat(dist_ap)
         dist_an = torch.cat(dist_an)
